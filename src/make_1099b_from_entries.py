@@ -1,3 +1,4 @@
+import os
 from pypdf import PdfReader, PdfWriter
 
 from transaction_entry import TransactionEntry
@@ -7,38 +8,24 @@ from recipient_info import RecipientInfo
 form_1099_b_template = "f1099b_copy.pdf"
 
 
-# # Open the PDF file in read-binary mode
-# with open(form_1099_b_template, 'rb') as pdf_file_ptr:
-#     # Create a PdfFileReader object to read the file content
-#     pdf_reader = PdfReader(pdf_file_ptr)
-
-#     # Identify the writable fields of this page
-#     writable_fields = pdf_reader.get_form_text_fields()
-
-#     # Set the value for each writable field to be the same as the key
-#     for key in writable_fields:
-#         writable_fields[key] = key
-
-#     # Write the new values into a new pdf file that is a copy of the original.
-#     pdf_writer = PdfWriter()
-#     pdf_writer.add_page(pdf_reader.pages[2])
-
-#     pdf_writer.update_page_form_field_values(
-#         pdf_writer.pages[0], writable_fields)
-#     pdf_writer.write("f1099b_copy_filled.pdf")
-
-
 acorns_name_and_address = "ACORNS SECURITIES LLC\n5300 CALIFORNIA AVENUE\nIRVINE, CA 92617"
 acorns_tin = "46-2538416"
 
 
 def make_1099b_from_acorns_entry(entry_object: TransactionEntry, unique_tag: str, recipient_info: RecipientInfo = None):
-    with open(form_1099_b_template, 'rb') as pdf_file_ptr:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    template_file_path = os.path.join(
+        this_dir, "files", form_1099_b_template)
+    with open(template_file_path, 'rb') as pdf_file_ptr:
         pdf_reader = PdfReader(pdf_file_ptr)
         writable_fields = pdf_reader.get_form_text_fields()
 
         pdf_writer = PdfWriter()
         pdf_writer.add_page(pdf_reader.pages[2])
+
+        # First set the value of all writeable fields to empty string
+        for key in writable_fields.keys():
+            writable_fields[key] = ""
 
         writable_fields[WriteableFieldKeys.PAYER_NAME_AND_ADDRESS] = acorns_name_and_address
         writable_fields[WriteableFieldKeys.PAYER_TIN] = acorns_tin
@@ -51,11 +38,20 @@ def make_1099b_from_acorns_entry(entry_object: TransactionEntry, unique_tag: str
         # Write date acquired, date sold, ...
         writable_fields[WriteableFieldKeys.PROCEEDS] = entry_object.proceeds
         writable_fields[WriteableFieldKeys.COST_OR_OTHER_BASIS] = entry_object.cost_basis
-        writable_fields[WriteableFieldKeys.MARKET_DISCOUNT] = entry_object.accrued_mkt
+        writable_fields[WriteableFieldKeys.MARKET_DISCOUNT] = entry_object.accrued_mkt or ""
         writable_fields[WriteableFieldKeys.DATE_ACQUIRED] = entry_object.buy_date
         writable_fields[WriteableFieldKeys.DATE_SOLD] = entry_object.sell_date
-        writable_fields[WriteableFieldKeys.ASSET_NAME_AND_QUANTITY] = f"{entry_object.quantity} of {entry_object.asset_name}"
+        writable_fields[WriteableFieldKeys.ASSET_NAME_AND_QUANTITY] = f"{entry_object.quantity} sh. {entry_object.asset_name}"
 
         pdf_writer.update_page_form_field_values(
             pdf_writer.pages[0], writable_fields)
-        pdf_writer.write(f"1099b_{unique_tag}.pdf")
+
+        # Find a directory with the same account number as the entry inside teh results folder.
+        # If it doesn't exist, create it.
+        results_dir = os.path.join(
+            this_dir, "results", entry_object.account_number)
+        if not os.path.exists(results_dir):
+            os.mkdir(results_dir)
+        write_path = os.path.join(
+            results_dir, f"1099b_{unique_tag}.pdf")
+        pdf_writer.write(write_path)

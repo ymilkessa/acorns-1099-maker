@@ -1,0 +1,4 @@
+.env
+*.pdf
+src/files/*.txt
+src/results
