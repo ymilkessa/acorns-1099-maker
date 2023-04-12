@@ -34,7 +34,7 @@ After cloning this repository, do the following:
 
 5. Then enter the file name of the acorns pdf file when prompted. And you're done!
 
-That's it! If you now go into `src/results`, you will find a folder that contains all of the generated 1099-B forms.
+That's it! A `results/` folder will be created. In it you will find a directory that contains all of the generated 1099-B forms. You can run the same program with other acorns 1099 forms, which will produce a separate directory in `results/` for each new acorns account id.
 
 ### Quick tip
 

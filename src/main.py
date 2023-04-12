@@ -6,6 +6,7 @@ from recipient_info import RecipientInfo
 from extract_text import extract_text_from_pdf
 from get_entries_from_text import get_1099_b_entries
 from make_1099b_from_entries import make_1099b_from_acorns_entry
+from rm_temp_files import clean_temp_files
 
 
 def generate_forms(recipient_information: RecipientInfo = None, pdf_file_name: str = None):
@@ -37,6 +38,7 @@ def generate_forms(recipient_information: RecipientInfo = None, pdf_file_name: s
     for i, entry in enumerate(entries):
         unique_tag = f"{recipient_info.tin}_{int(time())}_{i}"
         make_1099b_from_acorns_entry(entry, unique_tag, recipient_info)
+    clean_temp_files()
 
 
 if __name__ == "__main__":
